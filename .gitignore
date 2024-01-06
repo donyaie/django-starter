@@ -1,0 +1,9 @@
+env/
+.idea/
+.vscode/
+static/
+__pycache__/
+migrations/
+
+*.log
+*.sqlite3
