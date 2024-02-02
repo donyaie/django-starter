@@ -1,12 +1,60 @@
-from user.models import CustomUser
-
-from rest_framework import serializers
-
-from rest_framework.validators import UniqueValidator
-
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import authenticate
+from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
+from rest_framework.exceptions import NotAcceptable
 
-from django.contrib.auth.password_validation import (validate_password )
+from .models import User, Profile
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        fields = []
+
+
+class UserSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+    profile = ProfileSerializer()
+
+    def get_avatar(self, user):
+        if user.avatar:
+            return user.avatar.content.url
+        else:
+            return None
+
+    class Meta:
+        model = User
+        fields = ('suid', 'full_name', 'username', 'is_phone_number_verified', 'phone_number', 'avatar', 'is_guest', 'profile',)
+
+
+class LoginSerializer(serializers.Serializer):
+    user = UserSerializer()
+    token = serializers.CharField(required=True)
+    refresh = serializers.CharField(required=True)
+
+
+class UserUpdateSerializer(serializers.Serializer):
+    full_name = serializers.CharField(required=False)
+    avatar = serializers.CharField(required=False)
+    email = serializers.EmailField(required=False)
+    is_notification_enabled = serializers.CharField(required=False)
+
+
+class UserLoginSerializer(serializers.Serializer):
+    user = UserSerializer()
+    token = serializers.CharField()
+    refresh_token = serializers.CharField()
+
+
+class PhoneNumberSerializer(serializers.Serializer):
+    phone_number = serializers.CharField()
+
+
+class PhoneNumberActivationSerializer(serializers.Serializer):
+    phone_number = serializers.CharField()
+    activation_code = serializers.CharField()
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -20,35 +68,3 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # ...
 
         return token
-
-
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True, required=True, validators=[validate_password])
-    password2 = serializers.CharField(write_only=True, required=True)
-    email = serializers.EmailField(
-        required=True,
-        validators=[UniqueValidator(queryset=CustomUser.objects.all())]
-    )
-
-    class Meta:
-        model = CustomUser
-        fields = ('username', 'email', 'password', 'password2')
-
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError(
-                {"password": "Password fields didn't match."})
-
-        return attrs
-
-    def create(self, validated_data):
-        user = CustomUser.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-        )
-
-        user.set_password(validated_data['password'])
-        user.save()
-
-        return user

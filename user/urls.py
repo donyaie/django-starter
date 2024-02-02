@@ -1,14 +1,15 @@
-from . import views
-from rest_framework_simplejwt.views import (
-    TokenRefreshView,
-)
+from rest_framework.schemas import get_schema_view
+from django.urls import path
+from .views import (AuthPhoneNumberView, AuthPhoneNumberActivationView, AuthGuestView, UsersView)
 
-from django.urls import path, include
+
+app_name = 'user'
+
 
 urlpatterns = [
-    #Authentication
-    path('token/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('register/', views.RegisterView.as_view(), name='auth_register'),
+    path('v1/user/', UsersView.as_view(), name='users'),
 
+    path('v1/auth/phone/', AuthPhoneNumberView.as_view(), name='users-auth-phone'),
+    path('v1/auth/phone/confirm/', AuthPhoneNumberActivationView.as_view(),name='users-auth-phone-confirm'),
+    path('v1/auth/guest/', AuthGuestView.as_view(), name='users-auth-guest'),
 ]
